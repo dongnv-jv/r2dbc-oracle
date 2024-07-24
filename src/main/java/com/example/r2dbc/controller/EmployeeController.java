@@ -1,22 +1,15 @@
 package com.example.r2dbc.controller;
 
-import com.example.r2dbc.entity.Employee;
-import com.example.r2dbc.excel.EmployeeExcelBuilder;
-import com.example.r2dbc.repository.EmployeeRepository;
-import com.example.r2dbc.service.EmployeeService;
+import com.example.r2dbc.entity.Student;
+import com.example.r2dbc.excel.StudentExcelBuilder;
+import com.example.r2dbc.repository.StudentRepository;
+import com.example.r2dbc.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -32,65 +25,67 @@ import java.time.Duration;
 public class EmployeeController {
 
 
-  private final EmployeeRepository employeeRepository;
+    private final StudentRepository studentRepository;
 
-  private final EmployeeService employeeService;
+    private final StudentService studentService;
 
-  @PostMapping
-  public Mono<Employee> saveEmployee(@RequestBody Employee employee){
-    return employeeRepository.save(employee);
-  }
+    @PostMapping
+    public Mono<Student> saveEmployee(@RequestBody Student student) {
+        return studentRepository.save(student);
+    }
 
-  @GetMapping("/{id}")
-  public Mono<Employee> findOne(@PathVariable("id") Long id){
-    return employeeRepository.findById(id);
-  }
-  @GetMapping("/save")
-  public Mono<Employee> save(){
+    @GetMapping("/{id}")
+    public Mono<Student> findOne(@PathVariable("id") Long id) {
+        return studentRepository.findById(id);
+    }
 
-    return employeeService.saveAll().last();
-  }
+    @GetMapping("/save")
+    public Mono<Student> save() {
 
-  @PutMapping
-  public Mono<Employee> updateEmployee(@RequestBody Employee employee){
-    return employeeRepository.save(employee);
-  }
+        return studentService.saveAll().last();
+    }
 
-  @DeleteMapping("/{id}")
-  public Mono<Employee> deleteEmployee(@PathVariable("id") Long id){
-    return employeeRepository.findById(id)
-        .doOnSuccess(employee -> employeeRepository.delete(employee).subscribe());
-  }
+    @PutMapping
+    public Mono<Student> updateEmployee(@RequestBody Student student) {
+        return studentRepository.save(student);
+    }
 
-  @GetMapping
-  public Flux<Employee> findAll(){
-    return employeeService.get();
-  }
-  @GetMapping("/download")
-  public ResponseEntity<ByteArrayResource> getFile() {
+    @DeleteMapping("/{id}")
+    public Mono<Student> deleteEmployee(@PathVariable("id") Long id) {
+        return studentRepository.findById(id)
+                .doOnSuccess(student -> studentRepository.delete(student).subscribe());
+    }
 
-    ByteArrayInputStream workbook= EmployeeExcelBuilder.generateExcelFromFlux(
-            employeeService.getAll()).block(Duration.ofMinutes(3));
-    HttpHeaders headers = new HttpHeaders();
-    headers.add("Content-Disposition", "attachment; filename=customers.xlsx");
+    @GetMapping
+    public Flux<Student> findAll() {
+        return studentService.get();
+    }
 
-    return ResponseEntity
-            .ok()
-            .headers(headers)
-            .contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
-            .body(new ByteArrayResource(workbook.readAllBytes()));
+    @GetMapping("/download")
+    public ResponseEntity<ByteArrayResource> getFile() {
 
-  }
+        ByteArrayInputStream workbook = StudentExcelBuilder.exportStudentsToExcel(
+                studentService.getAll()).block(Duration.ofMinutes(3));
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=customers.xlsx");
 
-  @GetMapping(value = "/download1", produces = "application/vnd.ms-excel")
-  public Mono<ByteArrayResource> download() {
-    Mono<ByteArrayInputStream> workbook= EmployeeExcelBuilder.generateExcelFromFlux(
-            employeeService.getLimitedEmployees(700000));
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
+                .body(new ByteArrayResource(workbook.readAllBytes()));
 
-    return workbook.flatMap(inputStream -> {
-        byte[] bytes = inputStream.readAllBytes();
-        ByteArrayResource resource = new ByteArrayResource(bytes);
-        return Mono.just(resource);
-    });
-  }
+    }
+
+    @GetMapping(value = "/download1", produces = "application/vnd.ms-excel")
+    public Mono<ByteArrayResource> download() {
+        Mono<ByteArrayInputStream> workbook = StudentExcelBuilder.exportStudentsToExcel(
+                studentService.callStoredProcedure());
+
+        return workbook.flatMap(inputStream -> {
+            byte[] bytes = inputStream.readAllBytes();
+            ByteArrayResource resource = new ByteArrayResource(bytes);
+            return Mono.just(resource);
+        });
+    }
 }

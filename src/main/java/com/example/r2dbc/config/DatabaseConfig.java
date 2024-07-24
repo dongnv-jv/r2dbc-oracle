@@ -16,19 +16,14 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 
 import java.time.Duration;
 
-import static io.r2dbc.spi.ConnectionFactoryOptions.DATABASE;
-import static io.r2dbc.spi.ConnectionFactoryOptions.DRIVER;
-import static io.r2dbc.spi.ConnectionFactoryOptions.HOST;
-import static io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD;
-import static io.r2dbc.spi.ConnectionFactoryOptions.PORT;
-import static io.r2dbc.spi.ConnectionFactoryOptions.USER;
+import static io.r2dbc.spi.ConnectionFactoryOptions.*;
 
 @Configuration
 @EnableTransactionManagement
 public class DatabaseConfig {
 
 
-    @Bean
+    @Bean("connectionFactory")
     public ConnectionFactory connectionFactory() {
         ConnectionFactory connectionFactory = ConnectionFactories.get(
                 ConnectionFactoryOptions.builder()
@@ -37,7 +32,7 @@ public class DatabaseConfig {
                         .option(PORT, 1521)  // Optional, defaults to 5432
                         .option(USER, "DONGNV")
                         .option(PASSWORD, "123456")
-                        .option(DATABASE, "test")
+                        .option(DATABASE, "pdorcl")
                         .build()
         );
         ConnectionPoolConfiguration configuration = ConnectionPoolConfiguration.builder()
@@ -55,6 +50,7 @@ public class DatabaseConfig {
                 .connectionFactory(connectionFactory)
                 .build();
     }
+
     @Bean
     public R2dbcEntityTemplate r2dbcEntityTemplate(ConnectionFactory connectionFactory) {
         return new R2dbcEntityTemplate(connectionFactory);
